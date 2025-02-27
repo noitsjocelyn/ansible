@@ -1,6 +1,8 @@
 - name: Configure VMs which use dnf
   hosts: dnf_vms
   remote_user: "{{ vm_user }}"
+  vars:
+    asdf_version: v0.16.4
 
   tasks:
     - name: Upgrade all packages
@@ -149,7 +151,7 @@
       when: asdf_installed.rc != 0
       become: true
       ansible.builtin.unarchive:
-        src: https://github.com/asdf-vm/asdf/releases/download/v0.16.4/asdf-v0.16.4-linux-amd64.tar.gz
+        src: https://github.com/asdf-vm/asdf/releases/download/{{ asdf_version }}/asdf-{{ asdf_version }}-linux-amd64.tar.gz
         dest: /usr/local/bin
         remote_src: true
     - name: Configure asdf
