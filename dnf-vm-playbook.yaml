@@ -97,7 +97,8 @@
           export RUNZSH="no"
           sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
         creates: ~/.oh-my-zsh
-    - name: Download zsh-autocomplete plugin # noqa latest[git]
+    - name: Download zsh-autocomplete plugin
+      # noqa latest[git]
       ansible.builtin.git:
         repo: https://github.com/zsh-users/zsh-autosuggestions
         dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
@@ -195,12 +196,12 @@
       register: git_config
       changed_when: false
     - name: Setup Git aliases
-      # noqa command-instead-of-module
       when: |
         ('alias.co' not in git_config.stdout)
         or ('alias.br' not in git_config.stdout)
         or ('alias.ci' not in git_config.stdout)
         or ('alias.st' not in git_config.stdout)
+      # noqa command-instead-of-module
       ansible.builtin.shell:
         cmd: |
           git config --global alias.co checkout
