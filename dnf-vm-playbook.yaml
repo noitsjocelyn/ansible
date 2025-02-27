@@ -1,10 +1,11 @@
-- name: Configure VMs which use dnf
+- name: Configure unRAID VMs which use dnf
   hosts: dnf_vms
   remote_user: "{{ vm_user }}"
   vars:
     asdf_version: v0.16.4
 
   tasks:
+    # Initial setup
     - name: Upgrade all packages
       become: true
       # noqa package-latest
@@ -29,7 +30,6 @@
           Defaults env_keep += "PATH"
         force: false
         mode: "0644"
-
     - name: Check for en_US UTF-8 locale
       ansible.builtin.command:
         cmd: localectl status
@@ -41,7 +41,6 @@
       ansible.builtin.command:
         cmd: localectl set-locale en_US.UTF-8
       changed_when: true
-
     - name: Install other desired packages
       become: true
       # noqa package-latest
@@ -59,13 +58,14 @@
           - zsh
         state: latest
 
+    # Eternal Terminal setup
     - name: Enable Eternal Terminal
       become: true
       ansible.builtin.systemd_service:
         name: et
         enabled: true
         state: started
-    - name: Enable Eternal Terminal service, permanently and immediately if possible
+    - name: Enable et service port, permanently and immediately if possible
       become: true
       ansible.posix.firewalld:
         service: et
@@ -73,6 +73,7 @@
         permanent: true
         immediate: true
 
+    # zsh and Oh My Zsh setup
     - name: Use zsh as default shell
       become: true
       ansible.builtin.user:
@@ -120,7 +121,6 @@
           omz plugin enable git
       register: omz_git_enable
       changed_when: omz_git_enable.rc == 0
-
     - name: Enable OMZ direnv plugin
       when: ('direnv' not in omz_plugins.stdout)
       ansible.builtin.shell:
@@ -130,7 +130,6 @@
           omz plugin enable direnv
       register: omz_direnv_enable
       changed_when: omz_direnv_enable.rc == 0
-
     - name: Enable OMZ zsh-autosuggestions plugin
       when: ('zsh-autosuggestions' not in omz_plugins.stdout)
       ansible.builtin.shell:
@@ -141,6 +140,7 @@
       register: omz_autosuggestions_enable
       changed_when: omz_autosuggestions_enable.rc == 0
 
+    # asdf setup
     - name: Check for asdf
       ansible.builtin.shell:
         executable: /bin/zsh
@@ -183,12 +183,14 @@
         cmd: asdf plugin add nodejs
       changed_when: true
 
+    # yt-dlp setup
     - name: Install yt-dlp
       ansible.builtin.get_url:
         url: https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
         dest: ~/.local/bin/
         mode: a+rx
 
+    # Git setup
     - name: Check for Git aliases
       # noqa command-instead-of-module
       ansible.builtin.command:
