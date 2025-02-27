@@ -1,0 +1,202 @@
+- name: Configure VMs which use dnf
+  hosts: dnf_vms
+  remote_user: "{{ vm_user }}"
+
+  tasks:
+    - name: Upgrade all packages
+      become: true
+      # noqa package-latest
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+    - name: Install missing core packages
+      become: true
+      # noqa package-latest
+      ansible.builtin.dnf:
+        name:
+          - bzip2-devel
+          - glibc-all-langpacks
+          - libffi-devel
+          - sqlite-devel
+        state: latest
+    - name: Setup preserve env for sudoers
+      become: true
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/01_preserve_env"
+        content: |
+          Defaults env_keep += "PATH"
+        force: false
+        mode: "0644"
+
+    - name: Check for en_US UTF-8 locale
+      ansible.builtin.command:
+        cmd: localectl status
+      register: locale_status
+      changed_when: false
+    - name: Set locale
+      when: ('LANG=en_US.UTF-8' not in locale_status.stdout)
+      become: true
+      ansible.builtin.command:
+        cmd: localectl set-locale en_US.UTF-8
+      changed_when: true
+
+    - name: Install other desired packages
+      become: true
+      # noqa package-latest
+      ansible.builtin.dnf:
+        name:
+          - direnv
+          - et
+          - git
+          - jq
+          - kitty-terminfo
+          - ripgrep
+          - tmux
+          - vim
+          - zsh
+        state: latest
+
+    - name: Enable port 2022 for Eternal Terminal
+      become: true
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          firewall-cmd --permanent --add-port=2022/tcp
+          firewall-cmd --reload
+      changed_when: true
+    - name: Enable Eternal Terminal
+      become: true
+      ansible.builtin.systemd_service:
+        name: et
+        enabled: true
+        state: started
+
+    - name: Use zsh as default shell
+      become: true
+      ansible.builtin.user:
+        name: "{{ vm_user }}"
+        shell: /bin/zsh
+
+    - name: Check for Oh My Zsh
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          . ~/.zshrc
+          command -v omz
+      ignore_errors: true
+      register: omz_installed
+      changed_when: false
+    - name: Install OMZ
+      when: omz_installed.rc != 0
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          export CHSH="no"
+          export RUNZSH="no"
+          sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        creates: ~/.oh-my-zsh
+    - name: Download zsh-autocomplete plugin # noqa latest[git]
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    - name: Get enabled OMZ plugins
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          . ~/.zshrc
+          echo ${plugins}
+      register: omz_plugins
+      changed_when: false
+
+    - name: Enable OMZ git plugin
+      when: ('git' not in omz_plugins.stdout)
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          . ~/.zshrc
+          omz plugin enable git
+      register: omz_git_enable
+      changed_when: omz_git_enable.rc == 0
+
+    - name: Enable OMZ direnv plugin
+      when: ('direnv' not in omz_plugins.stdout)
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          . ~/.zshrc
+          omz plugin enable direnv
+      register: omz_direnv_enable
+      changed_when: omz_direnv_enable.rc == 0
+
+    - name: Enable OMZ zsh-autosuggestions plugin
+      when: ('zsh-autosuggestions' not in omz_plugins.stdout)
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          . ~/.zshrc
+          omz plugin enable zsh-autosuggestions
+      register: omz_autosuggestions_enable
+      changed_when: omz_autosuggestions_enable.rc == 0
+
+    - name: Check for asdf
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: command -v asdf
+      ignore_errors: true
+      register: asdf_installed
+      changed_when: false
+    - name: Download asdf
+      when: asdf_installed.rc != 0
+      become: true
+      ansible.builtin.unarchive:
+        src: https://github.com/asdf-vm/asdf/releases/download/v0.16.4/asdf-v0.16.4-linux-amd64.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+    - name: Configure asdf
+      when: asdf_installed.rc != 0
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: |
+          echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> "${HOME}/.zshrc"
+          # Enable legacy version files, like .nvmrc. https://asdf-vm.com/manage/configuration.html#legacy-version-file
+          echo "legacy_version_file = yes" >> "${HOME}/.asdfrc"
+      changed_when: true
+    - name: Check installed asdf plugins
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: asdf plugin list
+      register: asdf_plugin_list
+      changed_when: false
+    - name: Setup asdf Python plugin
+      when: ('python' not in asdf_plugin_list.stdout)
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: asdf plugin add python
+      changed_when: true
+    - name: Setup asdf NodeJS plugin
+      when: ('nodejs' not in asdf_plugin_list.stdout)
+      ansible.builtin.shell:
+        executable: /bin/zsh
+        cmd: asdf plugin add nodejs
+      changed_when: true
+
+    - name: Check for Git aliases
+      # noqa command-instead-of-module
+      ansible.builtin.command:
+        cmd: git config --list
+      register: git_config
+      changed_when: false
+    - name: Setup Git aliases
+      # noqa command-instead-of-module
+      when: |
+        ('alias.co' not in git_config.stdout)
+        or ('alias.br' not in git_config.stdout)
+        or ('alias.ci' not in git_config.stdout)
+        or ('alias.st' not in git_config.stdout)
+      ansible.builtin.shell:
+        cmd: |
+          git config --global alias.co checkout
+          git config --global alias.br branch
+          git config --global alias.ci commit
+          git config --global alias.st status
+      changed_when: true
