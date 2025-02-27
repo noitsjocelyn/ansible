@@ -208,3 +208,33 @@
           git config --global alias.ci commit
           git config --global alias.st status
       changed_when: true
+
+    # Mount unRAID shares
+    - name: Create /mnt/plex
+      become: true
+      ansible.builtin.file:
+        path: /mnt/plex
+        state: directory
+        mode: '0755'
+    - name: Create /mnt/transmission
+      become: true
+      ansible.builtin.file:
+        path: /mnt/transmission
+        state: directory
+        mode: '0755'
+    - name: Mount "plex" share
+      become: true
+      ansible.posix.mount:
+        path: /mnt/plex
+        src: plex
+        fstype: virtiofs
+        state: mounted
+        opts: relatime,rw
+    - name: Mount "transmission" share
+      become: true
+      ansible.posix.mount:
+        path: /mnt/transmission
+        src: transmission
+        fstype: virtiofs
+        state: mounted
+        opts: relatime,rw
