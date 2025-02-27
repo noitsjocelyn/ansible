@@ -1,5 +1,5 @@
-- name: Configure unRAID VMs which use dnf
-  hosts: dnf_vms
+- name: Configure unRAID VMs which use Fedora
+  hosts: fedora_vms
   remote_user: "{{ admin_user }}"
   vars:
     ansible_common_remote_group: wheel
