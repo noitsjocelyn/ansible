@@ -11,19 +11,29 @@ Dependencies:
 Install tools:
 
 ```shell
+# Install Python version
 asdf install
 asdf reshim python
+
+# Install Ansible
+pip install --upgrade pip
 pip install -r requirements.txt
 asdf reshim python
 ```
 
-Create or link Ansible inventory file at `/etc/ansible/hosts`. E.g.
+Create or link Ansible inventory file at `/etc/ansible/hosts`.
+
+E.g.:
 
 ```shell
 ln -s ./etc-ansible-hosts /etc/ansible/hosts 
 ```
 
 ### Remote servers
+
+Configure remost server for SSH login (e.g. add your login key for the VM user).
+
+Install `python3-libdnf5`:
 
 ```shell
 sudo dnf install python3-libdnf5
