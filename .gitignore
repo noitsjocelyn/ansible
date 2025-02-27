@@ -1,4 +1,5 @@
-.ansible
-.vscode
+.ansible/
+.vscode/
 
+temp/
 tmp/
