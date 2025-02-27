@@ -1,0 +1,5 @@
+[dnf_vms]
+util-f.lan
+
+[dnf_vms:vars]
+vm_user=unraid
