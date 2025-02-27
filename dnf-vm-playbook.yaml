@@ -50,26 +50,26 @@
           - git
           - jq
           - kitty-terminfo
+          - python3-firewall
           - ripgrep
           - tmux
           - vim
           - zsh
         state: latest
 
-    - name: Enable port 2022 for Eternal Terminal
-      become: true
-      ansible.builtin.shell:
-        executable: /bin/zsh
-        cmd: |
-          firewall-cmd --permanent --add-port=2022/tcp
-          firewall-cmd --reload
-      changed_when: true
     - name: Enable Eternal Terminal
       become: true
       ansible.builtin.systemd_service:
         name: et
         enabled: true
         state: started
+    - name: Enable Eternal Terminal service, permanently and immediately if possible
+      become: true
+      ansible.posix.firewalld:
+        service: et
+        state: enabled
+        permanent: true
+        immediate: true
 
     - name: Use zsh as default shell
       become: true
