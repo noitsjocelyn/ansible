@@ -1,5 +1,7 @@
 [dnf_vms]
-util-f.lan
+util-f.lan admin_user=admin unraid_user_name=unraid
 
 [dnf_vms:vars]
-vm_user=unraid
+ssh_pub_key_file=~/.ssh/id_ed25519.pub
+unraid_nobody_uid=99
+unraid_users_gid=100

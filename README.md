@@ -39,6 +39,13 @@ Install `python3-libdnf5`:
 sudo dnf install python3-libdnf5
 ```
 
+Set your hostname, if needed:
+
+```shell
+sudo hostnamectl hostname [your-hostname.lan]
+sudo shutdown -r now
+```
+
 ## Run the playbook
 
 ```shell
