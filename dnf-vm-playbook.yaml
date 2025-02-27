@@ -36,6 +36,34 @@
               - vim
               - zsh
             state: latest
+        - name: Get Fedora version
+          register: fedora_version
+          changed_when: false
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: rpm -E %fedora
+        - name: Enable RPM Fusion
+          # noqa package-latest
+          ansible.builtin.dnf:
+            name:
+              - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ fedora_version.stdout }}.noarch.rpm
+              - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ fedora_version.stdout }}.noarch.rpm
+            state: latest
+            disable_gpg_check: true
+        - name: Enable openh264
+          changed_when: false
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: |
+              dnf config-manager setopt fedora-cisco-openh264.enabled=1
+        - name: Install ffmpeg
+          # noqa package-latest
+          ansible.builtin.dnf:
+            name: 
+              - ffmpeg
+              - ffmpeg-devel
+            state: latest
+            allowerasing: true
         - name: Setup preserve env for sudoers
           ansible.builtin.copy:
             dest: "/etc/sudoers.d/01_preserve_env"
