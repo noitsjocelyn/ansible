@@ -182,6 +182,12 @@
         cmd: asdf plugin add nodejs
       changed_when: true
 
+    - name: Install yt-dlp
+      ansible.builtin.get_url:
+        url: https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
+        dest: ~/.local/bin/
+        mode: a+rx
+
     - name: Check for Git aliases
       # noqa command-instead-of-module
       ansible.builtin.command:
