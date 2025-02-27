@@ -39,9 +39,18 @@
         - name: Get Fedora version
           register: fedora_version
           changed_when: false
+          # noqa command-instead-of-module
           ansible.builtin.shell:
             executable: /bin/zsh
             cmd: rpm -E %fedora
+        - name: Import RPM Fusion Free GPG key
+          ansible.builtin.rpm_key:
+            key: https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-free-fedora-2020
+            fingerprint: E9A4 91A3 DE24 7814 E7E0 67EA E06F 8ECD D651 FF2E
+        - name: Import RPM Fusion Nonfree GPG key
+          ansible.builtin.rpm_key:
+            key: https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-nonfree-fedora-2020
+            fingerprint: 79BD B88F 9BBF 7391 0FD4 095B 6A2A F961 9484 3C65
         - name: Enable RPM Fusion
           # noqa package-latest
           ansible.builtin.dnf:
@@ -49,17 +58,15 @@
               - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ fedora_version.stdout }}.noarch.rpm
               - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ fedora_version.stdout }}.noarch.rpm
             state: latest
-            disable_gpg_check: true
         - name: Enable openh264
           changed_when: false
           ansible.builtin.shell:
             executable: /bin/zsh
-            cmd: |
-              dnf config-manager setopt fedora-cisco-openh264.enabled=1
+            cmd: dnf config-manager setopt fedora-cisco-openh264.enabled=1
         - name: Install ffmpeg
           # noqa package-latest
           ansible.builtin.dnf:
-            name: 
+            name:
               - ffmpeg
               - ffmpeg-devel
             state: latest
