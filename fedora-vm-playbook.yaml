@@ -113,14 +113,14 @@
           ansible.posix.mount:
             path: /mnt/plex
             src: plex
-            fstype: virtiofs
+            fstype: 9p
             state: mounted
             opts: relatime,rw
         - name: Mount "transmission" share
           ansible.posix.mount:
             path: /mnt/transmission
             src: transmission
-            fstype: virtiofs
+            fstype: 9p
             state: mounted
             opts: relatime,rw
 
