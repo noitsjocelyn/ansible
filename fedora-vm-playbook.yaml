@@ -30,6 +30,7 @@
               - git
               - jq
               - kitty-terminfo
+              - prename
               - python3-firewall
               - ripgrep
               - tmux
