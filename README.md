@@ -10,7 +10,7 @@ Dependencies:
 
 Install tools:
 
-```shell
+```sh
 # Install Python version
 asdf install
 asdf reshim python
@@ -25,29 +25,29 @@ Create or link Ansible inventory file at `/etc/ansible/hosts`.
 
 E.g.:
 
-```shell
+```sh
 ln -s ./etc-ansible-hosts /etc/ansible/hosts 
 ```
 
 ### Remote servers
 
-Configure remost server for SSH login (e.g. add your login key for the VM user).
+Configure remost server for SSH login (e.g. add your login key for the admin VM user).
 
 Install `python3-libdnf5`:
 
-```shell
+```sh
 sudo dnf install python3-libdnf5
 ```
 
 Set your hostname, if needed:
 
-```shell
+```sh
 sudo hostnamectl hostname [your-hostname.lan]
 sudo shutdown -r now
 ```
 
 ## Run the playbook
 
-```shell
+```sh
 ansible-playbook fedora-vm-playbook.yaml --ask-become-pass
 ```
