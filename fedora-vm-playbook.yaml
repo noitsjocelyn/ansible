@@ -3,7 +3,7 @@
   remote_user: "{{ admin_user }}"
   vars:
     ansible_common_remote_group: wheel
-    asdf_version: v0.16.4
+    asdf_version: v0.16.5
 
   tasks:
     - name: Admin tasks
