@@ -160,7 +160,7 @@
             executable: /bin/zsh
             cmd: |
               set -o pipefail
-              getent group 100 | cut -d: -f1
+              getent group {{ unraid_users_gid }} | cut -d: -f1
         - name: Add the unRAID user
           ansible.builtin.user:
             name: "{{ unraid_user_name }}"
