@@ -3,7 +3,7 @@
   remote_user: "{{ admin_user }}"
   vars:
     ansible_common_remote_group: wheel
-    asdf_version: v0.16.5
+    asdf_version: v0.16.6
 
   tasks:
     - name: Admin tasks
@@ -138,12 +138,19 @@
             permanent: true
             immediate: true
 
-        # Install yt-dlp
+        # Install and update yt-dlp
         - name: Download and install yt-dlp
           ansible.builtin.get_url:
             url: https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
             dest: /usr/local/bin
             mode: a+rx
+        - name: Update yt-dlp
+          register: yt_dlp_update
+          changed_when: ('Updated yt-dlp to' in yt_dlp_update.stdout)
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: |
+              yt-dlp --update
 
         # Install asdf
         - name: Download and install asdf
