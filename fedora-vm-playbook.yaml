@@ -3,7 +3,7 @@
   remote_user: "{{ admin_user }}"
   vars:
     ansible_common_remote_group: wheel
-    asdf_version: v0.16.6
+    asdf_version: v0.16.7
 
   tasks:
     - name: Admin tasks
@@ -19,6 +19,8 @@
           # noqa package-latest
           ansible.builtin.dnf:
             name:
+              # For Ansible
+              - python3-firewall
               # Core packages
               - bzip2-devel
               - glibc-all-langpacks
@@ -32,7 +34,6 @@
               - kitty-terminfo
               - mosh
               - prename
-              - python3-firewall
               - ripgrep
               - tmux
               - vim
