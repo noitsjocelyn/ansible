@@ -30,6 +30,7 @@
               - git
               - jq
               - kitty-terminfo
+              - mosh
               - prename
               - python3-firewall
               - ripgrep
@@ -134,6 +135,14 @@
         - name: Enable et service port, permanently and immediately if possible
           ansible.posix.firewalld:
             service: et
+            state: enabled
+            permanent: true
+            immediate: true
+
+        # Mosh setup (doesn't use a systemd service)
+        - name: Enable mosh service ports, permanently and immediately if possible
+          ansible.posix.firewalld:
+            service: mosh
             state: enabled
             permanent: true
             immediate: true
