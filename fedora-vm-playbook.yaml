@@ -23,6 +23,7 @@
               - python3-firewall
               # Core packages
               - bzip2-devel
+              - distribution-gpg-keys
               - glibc-all-langpacks
               - libffi-devel
               - sqlite-devel
@@ -48,11 +49,11 @@
             cmd: rpm -E %fedora
         - name: Import RPM Fusion Free GPG key
           ansible.builtin.rpm_key:
-            key: https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-free-fedora-2020
+            key: /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-free-fedora-{{ fedora_version.stdout }}
             fingerprint: E9A4 91A3 DE24 7814 E7E0 67EA E06F 8ECD D651 FF2E
         - name: Import RPM Fusion Nonfree GPG key
           ansible.builtin.rpm_key:
-            key: https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-nonfree-fedora-2020
+            key: /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-nonfree-fedora-{{ fedora_version.stdout }}
             fingerprint: 79BD B88F 9BBF 7391 0FD4 095B 6A2A F961 9484 3C65
         - name: Enable RPM Fusion
           # noqa package-latest
