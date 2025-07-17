@@ -26,12 +26,20 @@ Create or link Ansible inventory file at `/etc/ansible/hosts`.
 E.g.:
 
 ```sh
-ln -s ./etc-ansible-hosts /etc/ansible/hosts 
+ln -s ./etc-ansible-hosts.yaml /etc/ansible/hosts 
 ```
 
 ### Remote servers
 
-Configure remost server for SSH login (e.g. add your login key for the admin VM user).
+#### Fedora config
+
+- I use the "Network Installer" from [Fedora Alt Downloads](https://alt.fedoraproject.org)
+- I use the "Custom Install" packages choice with only Standard and Guest Agents selected as extra
+- Tested on Fedora 41 and 42
+
+#### Pre-playbook setup
+ 
+Configure remote server for SSH login (e.g. add your login key for the admin VM user).
 
 Install `python3-libdnf5`:
 

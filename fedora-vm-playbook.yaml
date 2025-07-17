@@ -29,6 +29,7 @@
               - sqlite-devel
               # Other packages
               - direnv
+              - emacs
               - et
               - git
               - jq
@@ -103,27 +104,17 @@
             key: "{{ lookup('file', ssh_pub_key_file) }}"
 
         # Mount unRAID shares
-        - name: Create /mnt/plex
+        - name: "Create share: /mnt/{{ item }}"
+          loop: "{{ unraid_shares }}"
           ansible.builtin.file:
-            path: /mnt/plex
+            path: "/mnt/{{ item }}"
             state: directory
             mode: '0755'
-        - name: Create /mnt/transmission
-          ansible.builtin.file:
-            path: /mnt/transmission
-            state: directory
-            mode: '0755'
-        - name: Mount "plex" share
+        - name: "Mount share: {{ item }}"
+          loop: "{{ unraid_shares }}"
           ansible.posix.mount:
-            path: /mnt/plex
-            src: plex
-            fstype: 9p
-            state: mounted
-            opts: relatime,rw
-        - name: Mount "transmission" share
-          ansible.posix.mount:
-            path: /mnt/transmission
-            src: transmission
+            path: "/mnt/{{ item }}"
+            src: "{{ item }}"
             fstype: 9p
             state: mounted
             opts: relatime,rw
@@ -197,67 +188,69 @@
       become: true
       become_user: "{{ unraid_user_name }}"
       block:
-        # Oh My Zsh setup
-        - name: Check for Oh My Zsh
-          ignore_errors: true
-          register: omz_installed
-          changed_when: false
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              . ~/.zshrc
-              command -v omz
-        - name: Install OMZ
-          when: omz_installed.rc != 0
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              export CHSH="no"
-              export RUNZSH="no"
-              sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-            creates: ~/.oh-my-zsh
-        - name: Download zsh-autocomplete plugin
-          # noqa latest[git]
-          ansible.builtin.git:
-            repo: https://github.com/zsh-users/zsh-autosuggestions
-            dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-        - name: Get enabled OMZ plugins
-          register: omz_plugins
-          changed_when: false
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              . ~/.zshrc
-              echo ${plugins}
+        - name: Oh-My-Zsh setup
+          when: setup_omz
+          block:
+            - name: Check for Oh-My-Zsh
+              ignore_errors: true
+              register: omz_installed
+              changed_when: false
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  command -v omz
+            - name: Install OMZ
+              when: omz_installed.rc != 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  export CHSH="no"
+                  export RUNZSH="no"
+                  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+                creates: ~/.oh-my-zsh
+            - name: Download zsh-autocomplete plugin
+              # noqa latest[git]
+              ansible.builtin.git:
+                repo: https://github.com/zsh-users/zsh-autosuggestions
+                dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+            - name: Get enabled OMZ plugins
+              register: omz_plugins
+              changed_when: false
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  echo ${plugins}
 
-        # OMZ plugin setup
-        - name: Enable OMZ git plugin
-          when: ('git' not in omz_plugins.stdout)
-          register: omz_git_enable
-          changed_when: omz_git_enable.rc == 0
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              . ~/.zshrc
-              omz plugin enable git
-        - name: Enable OMZ direnv plugin
-          when: ('direnv' not in omz_plugins.stdout)
-          register: omz_direnv_enable
-          changed_when: omz_direnv_enable.rc == 0
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              . ~/.zshrc
-              omz plugin enable direnv
-        - name: Enable OMZ zsh-autosuggestions plugin
-          when: ('zsh-autosuggestions' not in omz_plugins.stdout)
-          register: omz_autosuggestions_enable
-          changed_when: omz_autosuggestions_enable.rc == 0
-          ansible.builtin.shell:
-            executable: /bin/zsh
-            cmd: |
-              . ~/.zshrc
-              omz plugin enable zsh-autosuggestions
+            # OMZ plugin setup
+            - name: Enable OMZ git plugin
+              when: ('git' not in omz_plugins.stdout)
+              register: omz_git_enable
+              changed_when: omz_git_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable git
+            - name: Enable OMZ direnv plugin
+              when: ('direnv' not in omz_plugins.stdout)
+              register: omz_direnv_enable
+              changed_when: omz_direnv_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable direnv
+            - name: Enable OMZ zsh-autosuggestions plugin
+              when: ('zsh-autosuggestions' not in omz_plugins.stdout)
+              register: omz_autosuggestions_enable
+              changed_when: omz_autosuggestions_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable zsh-autosuggestions
 
         # asdf setup
         - name: Check for asdf shims in $PATH
