@@ -1,6 +1,6 @@
 - name: Configure unRAID VMs which use Fedora
   hosts: fedora_vms
-  remote_user: "{{ admin_user }}"
+  remote_user: "{{ admin_username }}"
   vars:
     ansible_common_remote_group: wheel
     asdf_version: v0.18.0
@@ -96,12 +96,12 @@
         - name: Use zsh as default shell for admin user
           become: true
           ansible.builtin.user:
-            name: "{{ admin_user }}"
+            name: "{{ admin_username }}"
             shell: /bin/zsh
         - name: Add authorized key for admin user
           ansible.posix.authorized_key:
-            user: "{{ admin_user }}"
-            key: "{{ lookup('file', ssh_pub_key_file) }}"
+            user: "{{ admin_username }}"
+            key: "{{ lookup('file', admin_ssh_pub_key_file) }}"
 
         # Mount unRAID shares
         - name: "Create share: /mnt/{{ item }}"
@@ -172,7 +172,7 @@
               getent group {{ unraid_users_gid }} | cut -d: -f1
         - name: Add the unRAID user
           ansible.builtin.user:
-            name: "{{ unraid_user_name }}"
+            name: "{{ unraid_username }}"
             comment: unRAID
             create_home: true
             shell: /bin/zsh
@@ -181,12 +181,12 @@
             groups: "{{ local_name_unraid_users_group.stdout }},wheel"
         - name: Add authorized key to unRAID user
           ansible.posix.authorized_key:
-            user: "{{ unraid_user_name }}"
-            key: "{{ lookup('file', ssh_pub_key_file) }}"
+            user: "{{ unraid_username }}"
+            key: "{{ lookup('file', unraid_ssh_pub_key_file) }}"
 
     - name: unRAID user setup # noqa name[casing]
       become: true
-      become_user: "{{ unraid_user_name }}"
+      become_user: "{{ unraid_username }}"
       block:
         - name: Oh-My-Zsh setup
           when: setup_omz
