@@ -3,7 +3,6 @@
   remote_user: "{{ admin_username }}"
   vars:
     ansible_common_remote_group: wheel
-    asdf_version: v0.18.0
 
   tasks:
     - name: Admin tasks
@@ -155,6 +154,14 @@
               yt-dlp --update
 
         # Install asdf
+        - name: Get asdf .release-please-manifest.json
+          ansible.builtin.uri:
+            url: https://raw.githubusercontent.com/asdf-vm/asdf/refs/heads/master/.release-please-manifest.json
+            return_content: true
+          register: asdf_release_please_manifest
+        - name: Extract asdf version from manifest
+          ansible.builtin.set_fact:
+            asdf_version: "v{{ asdf_release_please_manifest.content | regex_search('([0-9]+\\.)?([0-9]+\\.)?([0-9]+)') }}"
         - name: Download and install asdf
           ansible.builtin.unarchive:
             src: https://github.com/asdf-vm/asdf/releases/download/{{ asdf_version }}/asdf-{{ asdf_version }}-linux-amd64.tar.gz
