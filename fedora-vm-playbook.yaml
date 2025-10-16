@@ -33,6 +33,7 @@
               - git
               - jq
               - kitty-terminfo
+              - mkvtoolnix
               - mosh
               - prename
               - ripgrep
