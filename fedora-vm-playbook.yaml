@@ -148,6 +148,8 @@
             mode: a+rx
         - name: Update yt-dlp
           register: yt_dlp_update
+          # noinspection YAMLIncompatibleTypes
+          # WebStorm believes this is a `string`, but it is a `boolean`
           changed_when: ('Updated yt-dlp to' in yt_dlp_update.stdout)
           ansible.builtin.shell:
             executable: /bin/zsh
@@ -202,6 +204,8 @@
             - name: Check for Oh-My-Zsh
               ignore_errors: true
               register: omz_installed
+              # noinspection YAMLIncompatibleTypes
+              # `boolean` type is correct for changed_when
               changed_when: false
               ansible.builtin.shell:
                 executable: /bin/zsh
@@ -224,6 +228,8 @@
                 dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
             - name: Get enabled OMZ plugins
               register: omz_plugins
+              # noinspection YAMLIncompatibleTypes
+              # `boolean` type is correct for changed_when
               changed_when: false
               ansible.builtin.shell:
                 executable: /bin/zsh
