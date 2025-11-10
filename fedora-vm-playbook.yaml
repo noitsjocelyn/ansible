@@ -104,13 +104,13 @@
             key: "{{ lookup('file', admin_ssh_pub_key_file) }}"
 
         # Mount unRAID shares
-        - name: "Create share: /mnt/{{ item }}"
+        - name: Create unRAID shares
           loop: "{{ unraid_shares }}"
           ansible.builtin.file:
             path: "/mnt/{{ item }}"
             state: directory
             mode: '0755'
-        - name: "Mount share: {{ item }}"
+        - name: Mount unRAID shares
           loop: "{{ unraid_shares }}"
           ansible.posix.mount:
             path: "/mnt/{{ item }}"
@@ -189,10 +189,11 @@
             uid: "{{ unraid_nobody_uid }}"
             group: "{{ local_name_unraid_users_group.stdout }}"
             groups: "{{ local_name_unraid_users_group.stdout }},wheel"
-        - name: Add authorized key to unRAID user
+        - name: Add authorized keys to unRAID user
+          loop: "{{ unraid_ssh_pub_key_files }}"
           ansible.posix.authorized_key:
             user: "{{ unraid_username }}"
-            key: "{{ lookup('file', unraid_ssh_pub_key_file) }}"
+            key: "{{ lookup('file', item) }}"
 
     - name: unRAID user setup # noqa name[casing]
       become: true

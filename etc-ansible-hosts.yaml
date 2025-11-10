@@ -4,7 +4,8 @@ fedora_vms:
     admin_username: admin
     admin_ssh_pub_key_file: ~/.ssh/id_ed25519.pub
     unraid_username: unraid
-    unraid_ssh_pub_key_file: ~/.ssh/id_ed25519.pub
+    unraid_ssh_pub_key_files:
+      - ~/.ssh/id_ed25519.pub
     unraid_nobody_uid: 99
     unraid_users_gid: 100
     setup_omz: true
@@ -17,7 +18,9 @@ fedora_vms:
         - transmission
     leather.lan:
       unraid_username: leather
-      unraid_ssh_pub_key_file: ~/.ssh/vale_ed25519.pub
+      unraid_ssh_pub_key_files:
+        - ~/.ssh/leather_id_ed25519.pub
+        - ~/.ssh/vale_ed25519.pub
       unraid_shares:
         - leather
       setup_omz: false
