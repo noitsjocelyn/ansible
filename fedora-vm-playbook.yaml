@@ -199,6 +199,36 @@
       become: true
       become_user: "{{ unraid_username }}"
       block:
+        # Install and update Deno (required by yt-dlp)
+        - name: Check for Deno installation
+          ignore_errors: true
+          register: deno_installed
+          changed_when: false
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: |
+              command -v deno
+        - name: Download Deno installer
+          when: deno_installed.rc != 0
+          ansible.builtin.get_url:
+            url: https://deno.land/install.sh
+            dest: ~/install-deno.sh
+            mode: a+rx
+            force: true
+        - name: Install Deno
+          when: deno_installed.rc != 0
+          changed_when: true
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: sh /tmp/install-deno.sh --yes
+        - name: Update Deno
+          changed_when: false
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: |
+              . ~/.zshrc
+              deno upgrade
+
         - name: Oh-My-Zsh setup
           when: setup_omz
           block:
