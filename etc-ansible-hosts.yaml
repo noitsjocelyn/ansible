@@ -11,12 +11,12 @@ fedora_vms:
     setup_omz: true
 
   hosts:
-    util-f.lan:
+    util-f:
       unraid_username: unraid
       unraid_shares:
         - plex
         - transmission
-    leather.lan:
+    leather:
       unraid_username: leather
       unraid_ssh_pub_key_files:
         - ~/.ssh/leather_id_ed25519.pub
