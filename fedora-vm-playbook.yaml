@@ -26,6 +26,8 @@
               - glibc-all-langpacks
               - libffi-devel
               - sqlite-devel
+              # VM guest agent
+              - qemu-guest-agent
               # Other packages
               - direnv
               - emacs
@@ -212,7 +214,7 @@
           when: deno_installed.rc != 0
           ansible.builtin.get_url:
             url: https://deno.land/install.sh
-            dest: ~/install-deno.sh
+            dest: /tmp/install-deno.sh
             mode: a+rx
             force: true
         - name: Install Deno
