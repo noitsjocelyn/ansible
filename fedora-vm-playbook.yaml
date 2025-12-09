@@ -119,7 +119,7 @@
             src: "{{ item }}"
             fstype: 9p
             state: mounted
-            opts: relatime,rw
+            opts: trans=virtio,relatime,rw
 
         # Eternal Terminal setup
         - name: Enable Eternal Terminal
