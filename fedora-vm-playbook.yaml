@@ -209,6 +209,7 @@
           ansible.builtin.shell:
             executable: /bin/zsh
             cmd: |
+              . ~/.zshrc
               command -v deno
         - name: Download Deno installer
           when: deno_installed.rc != 0
