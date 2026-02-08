@@ -9,6 +9,7 @@ fedora_vms:
     unraid_nobody_uid: 99
     unraid_users_gid: 100
     setup_omz: true
+    ansible_python_interpreter: /usr/bin/python3
 
   hosts:
     util-f:
