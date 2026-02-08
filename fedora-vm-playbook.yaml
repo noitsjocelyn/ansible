@@ -223,7 +223,9 @@
           changed_when: true
           ansible.builtin.shell:
             executable: /bin/zsh
-            cmd: sh /tmp/install-deno.sh --yes
+            cmd: |
+              . ~/.zshrc
+              sh /tmp/install-deno.sh --yes
         - name: Update Deno
           changed_when: false
           ansible.builtin.shell:
