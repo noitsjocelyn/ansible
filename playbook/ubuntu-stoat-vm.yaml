@@ -1,0 +1,217 @@
+- name: Configure unRAID VMs which use Ubuntu for Stoat.chat
+  hosts: ubuntu_stoat_vms
+  remote_user: "{{ admin_username }}"
+  vars:
+    ansible_common_remote_group: wheel
+
+  tasks:
+    - name: Admin tasks
+      become: true
+      block:
+        # Initial setup
+        - name: Update all packages to their latest version
+          # noqa package-latest
+          ansible.builtin.apt:
+            name: "*"
+            state: latest
+        - name: Install packages
+          # noqa package-latest
+          ansible.builtin.apt:
+            name:
+              # For Ansible
+              - python3-firewall
+              # VM guest agent
+              - qemu-guest-agent
+              # Other packages
+              - direnv
+              - emacs
+              - et
+              - git
+              - jq
+              - mosh
+              - ripgrep
+              - tmux
+              - vim
+              - zsh
+            state: latest
+        - name: Setup preserve env for sudoers
+          ansible.builtin.copy:
+            dest: "/etc/sudoers.d/01_preserve_env"
+            content: |
+              Defaults env_keep += "PATH"
+            force: false
+            mode: "0644"
+        - name: Check for en_US UTF-8 locale
+          register: locale_status
+          changed_when: false
+          ansible.builtin.command:
+            cmd: localectl status
+        - name: Set locale
+          when: ('LANG=en_US.UTF-8' not in locale_status.stdout)
+          changed_when: true
+          ansible.builtin.command:
+            cmd: localectl set-locale en_US.UTF-8
+        - name: Use zsh as default shell for admin user
+          become: true
+          ansible.builtin.user:
+            name: "{{ admin_username }}"
+            shell: /bin/zsh
+        - name: Add authorized key for admin user
+          ansible.posix.authorized_key:
+            user: "{{ admin_username }}"
+            key: "{{ lookup('file', admin_ssh_pub_key_file) }}"
+
+        # Mount unRAID shares
+        - name: Create unRAID shares
+          loop: "{{ unraid_shares }}"
+          ansible.builtin.file:
+            path: "/mnt/{{ item }}"
+            state: directory
+            mode: '0755'
+        - name: Mount unRAID shares
+          loop: "{{ unraid_shares }}"
+          ansible.posix.mount:
+            path: "/mnt/{{ item }}"
+            src: "{{ item }}"
+            fstype: 9p
+            state: mounted
+            opts: trans=virtio,relatime,rw
+
+        # Eternal Terminal setup
+        - name: Enable Eternal Terminal
+          ansible.builtin.systemd_service:
+            name: et
+            enabled: true
+            state: started
+        - name: Enable et service port, permanently and immediately if possible
+          ansible.posix.firewalld:
+            service: et
+            state: enabled
+            permanent: true
+            immediate: true
+
+        # Mosh setup (doesn't use a systemd service)
+        - name: Enable mosh service ports, permanently and immediately if possible
+          ansible.posix.firewalld:
+            service: mosh
+            state: enabled
+            permanent: true
+            immediate: true
+
+        # Create unraid users
+        - name: Get name of group with same GID as unRAID nobody group
+          register: local_name_unraid_users_group
+          changed_when: false
+          ansible.builtin.shell:
+            executable: /bin/zsh
+            cmd: |
+              set -o pipefail
+              getent group {{ unraid_users_gid }} | cut -d: -f1
+        - name: Add the unRAID user
+          ansible.builtin.user:
+            name: "{{ unraid_username }}"
+            comment: unRAID
+            create_home: true
+            shell: /bin/zsh
+            uid: "{{ unraid_nobody_uid }}"
+            group: "{{ local_name_unraid_users_group.stdout }}"
+            groups: "{{ local_name_unraid_users_group.stdout }},wheel"
+        - name: Add authorized keys to unRAID user
+          loop: "{{ unraid_ssh_pub_key_files }}"
+          ansible.posix.authorized_key:
+            user: "{{ unraid_username }}"
+            key: "{{ lookup('file', item) }}"
+
+    - name: unRAID user setup # noqa name[casing]
+      become: true
+      become_user: "{{ unraid_username }}"
+      block:
+        - name: Oh-My-Zsh setup
+          when: setup_omz
+          block:
+            - name: Check for Oh-My-Zsh
+              ignore_errors: true
+              register: omz_installed
+              # noinspection YAMLIncompatibleTypes
+              # `boolean` type is correct for changed_when
+              changed_when: false
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  command -v omz
+            - name: Install OMZ
+              when: omz_installed.rc != 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  export CHSH="no"
+                  export RUNZSH="no"
+                  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+                creates: ~/.oh-my-zsh
+            - name: Download zsh-autocomplete plugin
+              # noqa latest[git]
+              ansible.builtin.git:
+                repo: https://github.com/zsh-users/zsh-autosuggestions
+                dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+            - name: Get enabled OMZ plugins
+              register: omz_plugins
+              # noinspection YAMLIncompatibleTypes
+              # `boolean` type is correct for changed_when
+              changed_when: false
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  echo ${plugins}
+
+            # OMZ plugin setup
+            - name: Enable OMZ git plugin
+              when: ('git' not in omz_plugins.stdout)
+              register: omz_git_enable
+              changed_when: omz_git_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable git
+            - name: Enable OMZ direnv plugin
+              when: ('direnv' not in omz_plugins.stdout)
+              register: omz_direnv_enable
+              changed_when: omz_direnv_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable direnv
+            - name: Enable OMZ zsh-autosuggestions plugin
+              when: ('zsh-autosuggestions' not in omz_plugins.stdout)
+              register: omz_autosuggestions_enable
+              changed_when: omz_autosuggestions_enable.rc == 0
+              ansible.builtin.shell:
+                executable: /bin/zsh
+                cmd: |
+                  . ~/.zshrc
+                  omz plugin enable zsh-autosuggestions
+
+        # Git setup
+        - name: Check for Git aliases
+          register: git_config
+          changed_when: false
+          # noqa command-instead-of-module
+          ansible.builtin.command:
+            cmd: git config --list
+        - name: Setup Git aliases
+          when: |
+            ('alias.co' not in git_config.stdout)
+            or ('alias.br' not in git_config.stdout)
+            or ('alias.ci' not in git_config.stdout)
+            or ('alias.st' not in git_config.stdout)
+          changed_when: true
+          # noqa command-instead-of-module
+          ansible.builtin.shell:
+            cmd: |
+              git config --global alias.co checkout
+              git config --global alias.br branch
+              git config --global alias.ci commit
+              git config --global alias.st status
