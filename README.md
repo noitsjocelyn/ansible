@@ -60,5 +60,5 @@ sudo shutdown -r now
 ## Run the playbook
 
 ```shell
-ansible-playbook fedora-vm-playbook.yaml --ask-become-pass
+ansible-playbook playbook/fedora-vm.yaml --ask-become-pass
 ```
