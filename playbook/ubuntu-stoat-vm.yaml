@@ -23,7 +23,6 @@
               # VM guest agent
               - qemu-guest-agent
               # Other packages
-              - direnv
               - emacs
               - et
               - git
