@@ -1,0 +1,73 @@
+- name: Configure unRAID VMs which use Fedora for Matrix/Element
+  hosts: fedora_matrix_vms
+  remote_user: "{{ admin_username }}"
+
+  tasks:
+    - name: Admin tasks
+      become: true
+      block:
+        # Initial setup
+        - name: Upgrade all packages
+          # noqa package-latest
+          ansible.builtin.dnf:
+            name: "*"
+            state: latest
+        - name: Install packages
+          # noqa package-latest
+          ansible.builtin.dnf:
+            name:
+              # For Ansible
+              - python3-firewall
+              # VM guest agent
+              - qemu-guest-agent
+              # Other packages
+              - emacs
+              - et
+              - git
+              - mosh
+              - ripgrep
+              - tmux
+              - vim
+            state: latest
+        - name: Add authorized keys for admin user
+          loop: "{{ admin_ssh_pub_key_files }}"
+          ansible.posix.authorized_key:
+            user: "{{ admin_username }}"
+            key: "{{ lookup('file', item) }}"
+
+        # Mount unRAID shares
+        - name: Create unRAID shares
+          loop: "{{ unraid_shares }}"
+          ansible.builtin.file:
+            path: "/mnt/{{ item }}"
+            state: directory
+            mode: '0755'
+        - name: Mount unRAID shares
+          loop: "{{ unraid_shares }}"
+          ansible.posix.mount:
+            path: "/mnt/{{ item }}"
+            src: "{{ item }}"
+            fstype: 9p
+            state: mounted
+            opts: trans=virtio,relatime,rw
+
+        # Eternal Terminal setup
+        - name: Enable Eternal Terminal
+          ansible.builtin.systemd_service:
+            name: et
+            enabled: true
+            state: started
+        - name: Enable et service port, permanently and immediately if possible
+          ansible.posix.firewalld:
+            service: et
+            state: enabled
+            permanent: true
+            immediate: true
+
+        # Mosh setup (doesn't use a systemd service)
+        - name: Enable mosh service ports, permanently and immediately if possible
+          ansible.posix.firewalld:
+            service: mosh
+            state: enabled
+            permanent: true
+            immediate: true
